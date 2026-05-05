@@ -2,12 +2,11 @@ package com.jakeclara.taskflow.service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
-
 import org.springframework.stereotype.Service;
 
 import com.jakeclara.taskflow.exception.TaskNotFoundException;
 import com.jakeclara.taskflow.model.Task;
+import com.jakeclara.taskflow.util.IdGenerator;
 
 /**
  * class to manage task objects
@@ -18,11 +17,12 @@ public class TaskService {
     // list to hold tasks
     private List<Task> taskList = new ArrayList<>();
 
-    // member variable for unique id generation
-    private final AtomicLong nextUniqueId = new AtomicLong(1);
+    // unique ID generator
+    private final IdGenerator idGenerator;
 
     // constructor
-    public TaskService() {
+    public TaskService(IdGenerator idGenerator) {
+        this.idGenerator = idGenerator;
     }
 
     // begin CRUD methods
@@ -31,14 +31,18 @@ public class TaskService {
      * 
      * @param name        the task name
      * @param description the task description
+     * 
+     * @return the new task object
      */
-    public void addTask(String name, String description) {
+    public Task addTask(String name, String description) {
         // generate unique ID
-        String taskID = generateUniqueID();
+        String taskID = idGenerator.generateUniqueID();
         // pass arguments to constructor to create a new task object
         Task newTask = new Task(taskID, name, description);
         // add new task object to the list
         taskList.add(newTask);
+        // return the new task object
+        return newTask;
     }
 
     /**
@@ -56,10 +60,13 @@ public class TaskService {
      * 
      * @param taskID  the task's unique identifier
      * @param newName the task's updated name
+     * 
+     * @return the updated task object
      */
-    public void updateName(String taskID, String newName) {
+    public Task updateName(String taskID, String newName) {
         Task task = getTaskByID(taskID);
         task.setName(newName);
+        return task;
     }
 
     /**
@@ -67,26 +74,13 @@ public class TaskService {
      * 
      * @param taskID         the task's unique identifier
      * @param newDescription the task's updated description
+     * 
+     * @return the updated task object
      */
-    public void updateDescription(String taskID, String newDescription) {
+    public Task updateDescription(String taskID, String newDescription) {
         Task task = getTaskByID(taskID);
         task.setDescription(newDescription);
-    }
-
-    // utility methods
-    /**
-     * generates a unique ID using the AtomicLong class member attribute
-     * adapted from:
-     * https://stackoverflow.com/questions/8938528/how-do-i-get-a-unique-id-per-object-in-java
-     * 
-     * @return a unique ID as String
-     */
-    private String generateUniqueID() {
-        // create a unique identifier by getting and incrementing nextUniqueId
-        long uniqueID = nextUniqueId.getAndIncrement();
-
-        // return the unique identifier as a String
-        return Long.toString(uniqueID);
+        return task;
     }
 
     /**
@@ -103,5 +97,15 @@ public class TaskService {
             }
         }
         throw new TaskNotFoundException("Task " + taskID + " not found.");
+    }
+
+    /**
+     * gets all tasks
+     * 
+     * @return a list of all tasks
+     */
+    public List<Task> getAllTasks() {
+        // return a new list to prevent external modification of the original list
+        return new ArrayList<>(taskList);
     }
 }
